@@ -1,0 +1,33 @@
+add_timesheet:
+  target:
+    entity:
+      integration: kimai
+      domain: sensor
+  fields:
+    activity_id:
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
+    date:
+      required: true
+      selector:
+        date:
+    start_time:
+      required: true
+      selector:
+        time:
+    duration_minutes:
+      selector:
+        number:
+          min: 1
+          max: 1440
+          unit_of_measurement: minutes
+          mode: box
+    end_time:
+      selector:
+        time:
+    description:
+      selector:
+        text:
