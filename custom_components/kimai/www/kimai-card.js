@@ -7,6 +7,9 @@
  * writes new time entries via the `kimai.add_timesheet` service call (same
  * connection). There is no separate backend for this card to talk to.
  */
+const CARD_VERSION = "0.1.2";
+console.info(`Kimai Card version ${CARD_VERSION}`);
+
 class KimaiCard extends HTMLElement {
   setConfig(config) {
     this._config = config || {};
@@ -216,6 +219,9 @@ class KimaiCard extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         ha-card { padding: 8px 0; }
+        .card-header { display: flex; align-items: baseline; gap: 8px; padding: 8px 16px 0; }
+        .card-header h1 { font-size: 1.5em; margin: 0; font-weight: 400; }
+        .card-version { font-size: 0.75em; color: var(--secondary-text-color); }
         .card-content { padding: 0 16px 16px; }
         .rows-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
         .row { padding: 8px 0; border-bottom: 1px solid var(--divider-color, #eee); }
@@ -257,7 +263,11 @@ class KimaiCard extends HTMLElement {
           .dialog-grid { grid-template-columns: 1fr; }
         }
       </style>
-      <ha-card header="Kimai">
+      <ha-card>
+        <div class="card-header">
+          <h1>Kimai</h1>
+          <span class="card-version">v${CARD_VERSION}</span>
+        </div>
         <div class="card-content">
           ${rows ? `<div class="rows-grid">${rows}</div>` : '<div class="empty">No Kimai project activity this week or month yet.</div>'}
           <button class="add-btn" id="add-btn">+ Add time</button>
