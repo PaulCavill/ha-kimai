@@ -45,7 +45,11 @@ class KimaiConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "invalid_auth"
             except KimaiConnectionError:
                 errors["base"] = "cannot_connect"
-            except KimaiApiError:
+            except KimaiApiError as err:
+                _LOGGER.error(
+                    "Kimai API error validating connection to %s: status=%s message=%s",
+                    base_url, err.status, err.message,
+                )
                 errors["base"] = "unknown"
             except Exception:  # noqa: BLE001
                 _LOGGER.exception("Unexpected error validating Kimai connection")

@@ -65,6 +65,9 @@ class KimaiDataUpdateCoordinator(DataUpdateCoordinator[dict[int, KimaiProjectDat
         except KimaiAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except KimaiApiError as err:
+            _LOGGER.error(
+                "Kimai API error during update: status=%s message=%s", err.status, err.message
+            )
             raise UpdateFailed(str(err)) from err
 
         active_project_ids = {

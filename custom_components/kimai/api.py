@@ -54,6 +54,7 @@ class KimaiApiClient:
         self, method: str, path: str, params: dict[str, Any] | None = None, json: Any = None
     ) -> Any:
         url = f"{self._base_url}{path}"
+        _LOGGER.debug("Kimai request: %s %s params=%s", method, url, params)
         try:
             async with self._session.request(
                 method,
@@ -63,18 +64,29 @@ class KimaiApiClient:
                 json=json,
                 timeout=aiohttp.ClientTimeout(total=30),
             ) as response:
+                _LOGGER.debug("Kimai response: %s %s -> %s", method, url, response.status)
                 if response.status in (401, 403):
                     body = await response.text()
+                    _LOGGER.error(
+                        "Kimai auth error for %s %s: status=%s body=%s",
+                        method, url, response.status, body,
+                    )
                     raise KimaiAuthError(response.status, body)
                 if response.status >= 400:
                     body = await response.text()
+                    _LOGGER.error(
+                        "Kimai API error for %s %s: status=%s body=%s",
+                        method, url, response.status, body,
+                    )
                     raise KimaiApiError(response.status, body)
                 if response.status == 204:
                     return None
                 return await response.json()
         except asyncio.TimeoutError as err:
+            _LOGGER.error("Timed out connecting to Kimai at %s %s", method, url)
             raise KimaiConnectionError(None, "Timed out connecting to Kimai") from err
         except aiohttp.ClientError as err:
+            _LOGGER.error("Connection error for Kimai at %s %s: %s", method, url, err)
             raise KimaiConnectionError(None, str(err)) from err
 
     async def async_validate(self) -> None:
