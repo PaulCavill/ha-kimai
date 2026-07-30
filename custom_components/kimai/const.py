@@ -6,7 +6,7 @@ DOMAIN = "kimai"
 CONF_BASE_URL = "base_url"
 CONF_API_TOKEN = "api_token"
 
-DEFAULT_SCAN_INTERVAL = timedelta(minutes=5)
+DEFAULT_SCAN_INTERVAL = timedelta(minutes=30)
 
 SERVICE_ADD_TIMESHEET = "add_timesheet"
 

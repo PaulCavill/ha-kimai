@@ -26,14 +26,6 @@ class KimaiCard extends HTMLElement {
     const firstAssignment = !this._hass;
     this._hass = hass;
     if (this._showDialog && !firstAssignment) {
-      // Home Assistant pushes a new hass object on every entity update
-      // system-wide. Rebuilding the DOM (via _render()'s innerHTML
-      // replacement) while the add-time dialog is open destroys and
-      // recreates the <input> elements, which dismisses native OS
-      // date/time pickers (seen on Android) that are anchored to the
-      // old element. Skip the passive rebuild while the dialog is open;
-      // user-triggered re-renders (open/close/project change/submit
-      // errors) still happen explicitly elsewhere.
       return;
     }
     this._render();
