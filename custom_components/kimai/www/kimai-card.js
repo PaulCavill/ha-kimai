@@ -160,41 +160,43 @@ class KimaiCard extends HTMLElement {
         <div class="dialog">
           <h2>Add time entry</h2>
           ${this._error ? `<div class="error">${this._error}</div>` : ""}
-          <label>Project
-            <select id="f-project">
-              ${entityIds
-                .map((id) => {
-                  const label = (this._hass.states[id] && this._hass.states[id].attributes.friendly_name) || id;
-                  return `<option value="${id}" ${id === form.entityId ? "selected" : ""}>${label}</option>`;
-                })
-                .join("")}
-            </select>
-          </label>
-          <label>Activity
-            <select id="f-activity">
-              ${activities
-                .map(
-                  (a) =>
-                    `<option value="${a.id}" ${String(a.id) === form.activityId ? "selected" : ""}>${a.name}</option>`
-                )
-                .join("")}
-            </select>
-          </label>
-          <label>Date
-            <input type="date" id="f-date" value="${form.date}" />
-          </label>
-          <label>Start time
-            <input type="time" id="f-start" value="${form.startTime}" />
-          </label>
-          <label>Duration (minutes)
-            <input type="number" id="f-duration" min="1" placeholder="e.g. 60" value="${form.durationMinutes}" />
-          </label>
-          <label>OR end time
-            <input type="time" id="f-end" value="${form.endTime}" />
-          </label>
-          <label>Description
-            <input type="text" id="f-desc" value="${form.description}" />
-          </label>
+          <div class="dialog-grid">
+            <label>Project
+              <select id="f-project">
+                ${entityIds
+                  .map((id) => {
+                    const label = (this._hass.states[id] && this._hass.states[id].attributes.friendly_name) || id;
+                    return `<option value="${id}" ${id === form.entityId ? "selected" : ""}>${label}</option>`;
+                  })
+                  .join("")}
+              </select>
+            </label>
+            <label>Activity
+              <select id="f-activity">
+                ${activities
+                  .map(
+                    (a) =>
+                      `<option value="${a.id}" ${String(a.id) === form.activityId ? "selected" : ""}>${a.name}</option>`
+                  )
+                  .join("")}
+              </select>
+            </label>
+            <label>Date
+              <input type="date" id="f-date" value="${form.date}" />
+            </label>
+            <label>Start time
+              <input type="time" id="f-start" value="${form.startTime}" />
+            </label>
+            <label>Duration (minutes)
+              <input type="number" id="f-duration" min="1" placeholder="e.g. 60" value="${form.durationMinutes}" />
+            </label>
+            <label>OR end time
+              <input type="time" id="f-end" value="${form.endTime}" />
+            </label>
+            <label class="span-2">Description
+              <textarea id="f-desc" rows="3">${form.description}</textarea>
+            </label>
+          </div>
           <div class="dialog-actions">
             <button id="f-cancel">Cancel</button>
             <button id="f-submit" class="primary">Submit</button>
@@ -235,19 +237,25 @@ class KimaiCard extends HTMLElement {
         }
         .dialog {
           background: var(--card-background-color, #fff); color: var(--primary-text-color, #000);
-          padding: 16px 20px; border-radius: 8px; width: 320px; max-width: 90vw;
+          padding: 16px 20px; border-radius: 8px; width: 460px; max-width: 90vw;
           max-height: 85vh; overflow-y: auto;
         }
         .dialog h2 { margin-top: 0; }
+        .dialog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
         .dialog label { display: block; margin-bottom: 10px; font-size: 0.9em; }
-        .dialog input, .dialog select {
+        .dialog label.span-2 { grid-column: 1 / -1; }
+        .dialog input, .dialog select, .dialog textarea {
           width: 100%; box-sizing: border-box; padding: 6px; margin-top: 4px;
           border: 1px solid var(--divider-color, #ccc); border-radius: 4px; background: transparent; color: inherit;
+          font-family: inherit; font-size: inherit; resize: vertical;
         }
         .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
         .dialog-actions button { padding: 8px 14px; border-radius: 4px; border: 1px solid var(--divider-color, #ccc); background: none; cursor: pointer; color: inherit; }
         .dialog-actions button.primary { background: var(--primary-color, #03a9f4); color: var(--text-primary-color, #fff); border: none; }
         .error { color: var(--error-color, #db4437); margin-bottom: 10px; font-size: 0.9em; }
+        @media (max-width: 480px) {
+          .dialog-grid { grid-template-columns: 1fr; }
+        }
       </style>
       <ha-card header="Kimai">
         <div class="card-content">
