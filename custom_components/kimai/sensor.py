@@ -94,7 +94,6 @@ class KimaiProjectSensor(CoordinatorEntity[KimaiDataUpdateCoordinator], SensorEn
             return {}
         return {
             "project_name": project.name,
-            "raw_project_name": project.raw_project_name,
             "week_hours": round(project.week_seconds / 3600, 1),
             "week_seconds": project.week_seconds,
             "month_hours": round(project.month_seconds / 3600, 1),

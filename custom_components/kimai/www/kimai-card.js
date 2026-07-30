@@ -7,7 +7,7 @@
  * writes new time entries via the `kimai.add_timesheet` service call (same
  * connection). There is no separate backend for this card to talk to.
  */
-const CARD_VERSION = "0.1.4";
+const CARD_VERSION = "0.1.5";
 console.info(`Kimai Card version ${CARD_VERSION}`);
 
 class KimaiCard extends HTMLElement {

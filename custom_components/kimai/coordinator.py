@@ -26,7 +26,6 @@ class KimaiProjectData:
 
     id: int
     name: str
-    raw_project_name: str | None
     customer_id: int | None
     customer_name: str | None
     week_seconds: float
@@ -104,7 +103,6 @@ class KimaiDataUpdateCoordinator(DataUpdateCoordinator[dict[int, KimaiProjectDat
             data[project_id] = KimaiProjectData(
                 id=project_id,
                 name=project.get("name") or f"Project {project_id}",
-                raw_project_name=project.get("name"),
                 customer_id=project.get("customer"),
                 customer_name=project.get("customerName") or project.get("parentTitle"),
                 week_seconds=week_seconds.get(project_id, 0),
