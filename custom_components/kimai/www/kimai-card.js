@@ -7,7 +7,7 @@
  * writes new time entries via the `kimai.add_timesheet` service call (same
  * connection). There is no separate backend for this card to talk to.
  */
-const CARD_VERSION = "0.1.2";
+const CARD_VERSION = "0.1.3";
 console.info(`Kimai Card version ${CARD_VERSION}`);
 
 class KimaiCard extends HTMLElement {
@@ -32,7 +32,13 @@ class KimaiCard extends HTMLElement {
   }
 
   static getStubConfig() {
-    return {};
+    return { title: "Kimai" };
+  }
+
+  _labelFor(entityId) {
+    const state = this._hass && this._hass.states[entityId];
+    const attrs = (state && state.attributes) || {};
+    return attrs.project_name || attrs.friendly_name || entityId;
   }
 
   _entityIds() {
@@ -135,7 +141,7 @@ class KimaiCard extends HTMLElement {
       return "";
     }
     const attrs = state.attributes || {};
-    const name = attrs.friendly_name || entityId;
+    const name = this._labelFor(entityId);
     const week = attrs.week_hours ?? 0;
     const month = attrs.month_hours ?? 0;
     const budget = attrs.time_budget_hours || 0;
@@ -168,7 +174,7 @@ class KimaiCard extends HTMLElement {
               <select id="f-project">
                 ${entityIds
                   .map((id) => {
-                    const label = (this._hass.states[id] && this._hass.states[id].attributes.friendly_name) || id;
+                    const label = this._labelFor(id);
                     return `<option value="${id}" ${id === form.entityId ? "selected" : ""}>${label}</option>`;
                   })
                   .join("")}
@@ -215,13 +221,14 @@ class KimaiCard extends HTMLElement {
     }
     const entityIds = this._entityIds();
     const rows = entityIds.map((id) => this._renderRow(id)).join("");
+    const title = this._config.title || "Kimai";
 
     this.shadowRoot.innerHTML = `
       <style>
         ha-card { padding: 8px 0; }
         .card-header { display: flex; align-items: baseline; gap: 8px; padding: 8px 16px 0; }
         .card-header h1 { font-size: 1.5em; margin: 0; font-weight: 400; }
-        .card-version { font-size: 0.75em; color: var(--secondary-text-color); }
+        .card-version { font-size: 0.65em; color: var(--secondary-text-color); }
         .card-content { padding: 0 16px 16px; }
         .rows-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
         .row { padding: 8px 0; border-bottom: 1px solid var(--divider-color, #eee); }
@@ -265,7 +272,7 @@ class KimaiCard extends HTMLElement {
       </style>
       <ha-card>
         <div class="card-header">
-          <h1>Kimai</h1>
+          <h1>${title}</h1>
           <span class="card-version">v${CARD_VERSION}</span>
         </div>
         <div class="card-content">

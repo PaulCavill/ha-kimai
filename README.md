@@ -60,7 +60,13 @@ Settings → Dashboards → ⋮ → Resources → Add Resource:
 - Resource type: JavaScript Module
 
 Then add a card of type `Custom: Kimai Card` (`custom:kimai-card`) to any
-dashboard view.
+dashboard view. The card's title defaults to "Kimai" but can be customized
+by editing the card in YAML mode and adding a `title` field, e.g.:
+
+```yaml
+type: custom:kimai-card
+title: My Time Tracker
+```
 
 ## Known limitations
 

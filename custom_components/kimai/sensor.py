@@ -85,7 +85,7 @@ class KimaiProjectSensor(CoordinatorEntity[KimaiDataUpdateCoordinator], SensorEn
         project = self._project
         if project is None:
             return None
-        return round(project.month_seconds / 3600, 2)
+        return round(project.month_seconds / 3600, 1)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -93,9 +93,10 @@ class KimaiProjectSensor(CoordinatorEntity[KimaiDataUpdateCoordinator], SensorEn
         if project is None:
             return {}
         return {
-            "week_hours": round(project.week_seconds / 3600, 2),
+            "project_name": project.name,
+            "week_hours": round(project.week_seconds / 3600, 1),
             "week_seconds": project.week_seconds,
-            "month_hours": round(project.month_seconds / 3600, 2),
+            "month_hours": round(project.month_seconds / 3600, 1),
             "month_seconds": project.month_seconds,
             "active": project.active,
             "project_id": project.id,
@@ -103,7 +104,7 @@ class KimaiProjectSensor(CoordinatorEntity[KimaiDataUpdateCoordinator], SensorEn
             "customer_name": project.customer_name,
             "activities": project.activities,
             "time_budget_hours": (
-                round(project.time_budget_seconds / 3600, 2)
+                round(project.time_budget_seconds / 3600, 1)
                 if project.time_budget_seconds
                 else 0
             ),
