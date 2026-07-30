@@ -144,6 +144,7 @@ class KimaiApiClient:
         begin: str,
         end: str,
         description: str | None = None,
+        billable: bool = True,
     ) -> dict[str, Any]:
         """Create a completed timesheet entry."""
         payload: dict[str, Any] = {
@@ -151,6 +152,7 @@ class KimaiApiClient:
             "activity": activity,
             "begin": begin,
             "end": end,
+            "billable": billable,
         }
         if description:
             payload["description"] = description

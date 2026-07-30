@@ -13,6 +13,7 @@ from homeassistant.helpers import entity_registry as er
 from .api import KimaiApiError
 from .const import (
     ATTR_ACTIVITY_ID,
+    ATTR_BILLABLE,
     ATTR_DATE,
     ATTR_DESCRIPTION,
     ATTR_DURATION_MINUTES,
@@ -32,6 +33,7 @@ ADD_TIMESHEET_SCHEMA = vol.Schema(
         vol.Optional(ATTR_DURATION_MINUTES): vol.Coerce(int),
         vol.Optional(ATTR_END_TIME): cv.time,
         vol.Optional(ATTR_DESCRIPTION): cv.string,
+        vol.Optional(ATTR_BILLABLE, default=True): cv.boolean,
     }
 )
 
@@ -82,6 +84,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 begin=begin_dt.strftime(DATETIME_FORMAT),
                 end=end_dt.strftime(DATETIME_FORMAT),
                 description=call.data.get(ATTR_DESCRIPTION),
+                billable=call.data[ATTR_BILLABLE],
             )
         except KimaiApiError as err:
             raise HomeAssistantError(f"Kimai rejected the timesheet entry: {err.message}") from err

@@ -31,3 +31,7 @@ add_timesheet:
     description:
       selector:
         text:
+    billable:
+      default: true
+      selector:
+        boolean:

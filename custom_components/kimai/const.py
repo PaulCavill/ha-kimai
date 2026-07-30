@@ -16,6 +16,7 @@ ATTR_START_TIME = "start_time"
 ATTR_DURATION_MINUTES = "duration_minutes"
 ATTR_END_TIME = "end_time"
 ATTR_DESCRIPTION = "description"
+ATTR_BILLABLE = "billable"
 
 API_PATH_USERS_ME = "/api/users/me"
 API_PATH_PROJECTS = "/api/projects"

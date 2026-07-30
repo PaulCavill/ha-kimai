@@ -47,6 +47,10 @@
         "description": {
           "name": "Description",
           "description": "Optional description for the timesheet entry."
+        },
+        "billable": {
+          "name": "Billable",
+          "description": "Whether this time entry is billable. Defaults to on."
         }
       }
     }

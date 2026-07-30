@@ -7,7 +7,7 @@
  * writes new time entries via the `kimai.add_timesheet` service call (same
  * connection). There is no separate backend for this card to talk to.
  */
-const CARD_VERSION = "0.1.5";
+const CARD_VERSION = "0.1.6";
 console.info(`Kimai Card version ${CARD_VERSION}`);
 
 class KimaiCard extends HTMLElement {
@@ -72,6 +72,7 @@ class KimaiCard extends HTMLElement {
       durationMinutes: "",
       endTime: "",
       description: "",
+      billable: true,
     };
     this._error = null;
     this._showDialog = true;
@@ -129,6 +130,7 @@ class KimaiCard extends HTMLElement {
     if (form.description) {
       data.description = form.description;
     }
+    data.billable = !!form.billable;
 
     try {
       await this._hass.callService("kimai", "add_timesheet", data);
@@ -209,6 +211,10 @@ class KimaiCard extends HTMLElement {
             <label class="span-2">Description
               <textarea id="f-desc" rows="3">${form.description}</textarea>
             </label>
+            <label class="span-2 checkbox-row">
+              <input type="checkbox" id="f-billable" ${form.billable ? "checked" : ""} />
+              Billable
+            </label>
           </div>
           <div class="dialog-actions">
             <button id="f-cancel">Cancel</button>
@@ -266,6 +272,8 @@ class KimaiCard extends HTMLElement {
           border: 1px solid var(--divider-color, #ccc); border-radius: 4px; background: transparent; color: inherit;
           font-family: inherit; font-size: inherit; resize: vertical;
         }
+        .dialog label.checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 0; }
+        .dialog input[type="checkbox"] { width: auto; margin-top: 0; }
         .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
         .dialog-actions button { padding: 8px 14px; border-radius: 4px; border: 1px solid var(--divider-color, #ccc); background: none; cursor: pointer; color: inherit; }
         .dialog-actions button.primary { background: var(--primary-color, #03a9f4); color: var(--text-primary-color, #fff); border: none; }
@@ -315,6 +323,10 @@ class KimaiCard extends HTMLElement {
       bindField("f-duration", "durationMinutes");
       bindField("f-end", "endTime");
       bindField("f-desc", "description");
+
+      this.shadowRoot.getElementById("f-billable").addEventListener("change", (ev) => {
+        this._form.billable = ev.target.checked;
+      });
     }
   }
 }
