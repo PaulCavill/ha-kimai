@@ -215,8 +215,8 @@ class KimaiCard extends HTMLElement {
       <style>
         ha-card { padding: 8px 0; }
         .card-content { padding: 0 16px 16px; }
+        .rows-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
         .row { padding: 8px 0; border-bottom: 1px solid var(--divider-color, #eee); }
-        .row:last-of-type { border-bottom: none; }
         .row-header { display: flex; justify-content: space-between; align-items: center; }
         .name { font-weight: 500; }
         .badge { font-size: 0.8em; color: var(--success-color, green); }
@@ -251,7 +251,7 @@ class KimaiCard extends HTMLElement {
       </style>
       <ha-card header="Kimai">
         <div class="card-content">
-          ${rows || '<div class="empty">No Kimai project activity this week or month yet.</div>'}
+          ${rows ? `<div class="rows-grid">${rows}</div>` : '<div class="empty">No Kimai project activity this week or month yet.</div>'}
           <button class="add-btn" id="add-btn">+ Add time</button>
         </div>
       </ha-card>
