@@ -7,7 +7,7 @@
  * writes new time entries via the `kimai.add_timesheet` service call (same
  * connection). There is no separate backend for this card to talk to.
  */
-const CARD_VERSION = "0.1.6";
+const CARD_VERSION = "0.1.7";
 console.info(`Kimai Card version ${CARD_VERSION}`);
 
 class KimaiCard extends HTMLElement {
@@ -26,6 +26,13 @@ class KimaiCard extends HTMLElement {
     const firstAssignment = !this._hass;
     this._hass = hass;
     if (this._showDialog && !firstAssignment) {
+      // Home Assistant pushes a new hass object on every entity update
+      // system-wide. Rebuilding the DOM while the add-time dialog is open
+      // destroys and recreates its <input> elements, which dismisses
+      // native OS date/time pickers (seen on Android) anchored to the old
+      // element. Skip the passive rebuild while the dialog is open; the
+      // deliberate re-renders elsewhere (open/close/project change/submit
+      // errors) still happen explicitly.
       return;
     }
     this._render();
@@ -46,6 +53,9 @@ class KimaiCard extends HTMLElement {
   }
 
   _entityIds() {
+    // Row entities: only projects with time logged this week/month (deliberately
+    // filtered, kept separate from the always-complete project list used by the
+    // add-time dialog below — see _projectListEntityId/_allProjects).
     if (this._config.entities && this._config.entities.length) {
       return this._config.entities;
     }
@@ -61,12 +71,30 @@ class KimaiCard extends HTMLElement {
       .sort();
   }
 
-  _openDialog(entityIds) {
-    const firstEntity = entityIds[0] || "";
-    const activities = this._activitiesFor(firstEntity);
+  _projectListEntityId() {
+    if (!this._hass) {
+      return null;
+    }
+    return (
+      Object.keys(this._hass.states).find((entityId) => {
+        const attrs = this._hass.states[entityId].attributes || {};
+        return Array.isArray(attrs.projects);
+      }) || null
+    );
+  }
+
+  _allProjects() {
+    const entityId = this._projectListEntityId();
+    const state = entityId && this._hass.states[entityId];
+    return (state && state.attributes && state.attributes.projects) || [];
+  }
+
+  _openDialog() {
+    const projects = this._allProjects();
+    const firstProject = projects[0];
     this._form = {
-      entityId: firstEntity,
-      activityId: activities[0] ? String(activities[0].id) : "",
+      projectId: firstProject ? String(firstProject.id) : "",
+      activityId: firstProject && firstProject.activities[0] ? String(firstProject.activities[0].id) : "",
       date: new Date().toISOString().slice(0, 10),
       startTime: "",
       durationMinutes: "",
@@ -86,16 +114,16 @@ class KimaiCard extends HTMLElement {
     this._render();
   }
 
-  _activitiesFor(entityId) {
-    const state = this._hass && this._hass.states[entityId];
-    return (state && state.attributes && state.attributes.activities) || [];
+  _activitiesFor(projectId) {
+    const project = this._allProjects().find((p) => String(p.id) === String(projectId));
+    return (project && project.activities) || [];
   }
 
-  _onProjectChange(entityId) {
-    const activities = this._activitiesFor(entityId);
+  _onProjectChange(projectId) {
+    const activities = this._activitiesFor(projectId);
     this._form = {
       ...this._form,
-      entityId,
+      projectId,
       activityId: activities[0] ? String(activities[0].id) : "",
     };
     this._render();
@@ -103,7 +131,13 @@ class KimaiCard extends HTMLElement {
 
   async _submit() {
     const form = this._form;
-    if (!form.entityId || !form.activityId || !form.date || !form.startTime) {
+    const projectListEntityId = this._projectListEntityId();
+    if (!projectListEntityId) {
+      this._error = "No Kimai project list entity found.";
+      this._render();
+      return;
+    }
+    if (!form.projectId || !form.activityId || !form.date || !form.startTime) {
       this._error = "Please fill in project, activity, date, and start time.";
       this._render();
       return;
@@ -117,7 +151,8 @@ class KimaiCard extends HTMLElement {
     }
 
     const data = {
-      entity_id: form.entityId,
+      entity_id: projectListEntityId,
+      project_id: Number(form.projectId),
       activity_id: Number(form.activityId),
       date: form.date,
       start_time: form.startTime,
@@ -167,9 +202,10 @@ class KimaiCard extends HTMLElement {
     `;
   }
 
-  _renderDialog(entityIds) {
+  _renderDialog() {
     const form = this._form;
-    const activities = this._activitiesFor(form.entityId);
+    const projects = this._allProjects();
+    const activities = this._activitiesFor(form.projectId);
     return `
       <div class="overlay" id="overlay">
         <div class="dialog">
@@ -178,11 +214,11 @@ class KimaiCard extends HTMLElement {
           <div class="dialog-grid">
             <label>Project
               <select id="f-project">
-                ${entityIds
-                  .map((id) => {
-                    const label = this._labelFor(id);
-                    return `<option value="${id}" ${id === form.entityId ? "selected" : ""}>${label}</option>`;
-                  })
+                ${projects
+                  .map(
+                    (project) =>
+                      `<option value="${project.id}" ${String(project.id) === form.projectId ? "selected" : ""}>${project.name}</option>`
+                  )
                   .join("")}
               </select>
             </label>
@@ -232,6 +268,7 @@ class KimaiCard extends HTMLElement {
     const entityIds = this._entityIds();
     const rows = entityIds.map((id) => this._renderRow(id)).join("");
     const title = this._config.title || "Kimai";
+    const hasProjects = this._allProjects().length > 0;
 
     this.shadowRoot.innerHTML = `
       <style>
@@ -254,6 +291,7 @@ class KimaiCard extends HTMLElement {
           background: var(--primary-color, #03a9f4); color: var(--text-primary-color, #fff);
           font-size: 1em; cursor: pointer;
         }
+        .add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .overlay {
           position: fixed; inset: 0; background: rgba(0,0,0,0.5);
           display: flex; align-items: center; justify-content: center; z-index: 1000;
@@ -289,15 +327,15 @@ class KimaiCard extends HTMLElement {
         </div>
         <div class="card-content">
           ${rows ? `<div class="rows-grid">${rows}</div>` : '<div class="empty">No Kimai project activity this week or month yet.</div>'}
-          <button class="add-btn" id="add-btn">+ Add time</button>
+          <button class="add-btn" id="add-btn" ${hasProjects ? "" : "disabled title=\"No Kimai projects available\""}>+ Add time</button>
         </div>
       </ha-card>
-      ${this._showDialog ? this._renderDialog(entityIds) : ""}
+      ${this._showDialog ? this._renderDialog() : ""}
     `;
 
     const addBtn = this.shadowRoot.getElementById("add-btn");
-    if (addBtn) {
-      addBtn.addEventListener("click", () => this._openDialog(entityIds));
+    if (addBtn && hasProjects) {
+      addBtn.addEventListener("click", () => this._openDialog());
     }
 
     if (this._showDialog) {

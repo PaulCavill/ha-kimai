@@ -4,6 +4,12 @@ add_timesheet:
       integration: kimai
       domain: sensor
   fields:
+    project_id:
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
     activity_id:
       required: true
       selector:

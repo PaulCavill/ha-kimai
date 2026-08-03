@@ -46,6 +46,7 @@ class KimaiDataUpdateCoordinator(DataUpdateCoordinator[dict[int, KimaiProjectDat
             update_interval=DEFAULT_SCAN_INTERVAL,
         )
         self.client = client
+        self.all_projects: list[dict[str, Any]] = []
 
     async def _async_update_data(self) -> dict[int, KimaiProjectData]:
         now = dt_util.now()
@@ -92,26 +93,41 @@ class KimaiDataUpdateCoordinator(DataUpdateCoordinator[dict[int, KimaiProjectDat
 
         global_activities = activities_by_project.get(None, [])
 
+        all_projects: list[dict[str, Any]] = []
         data: dict[int, KimaiProjectData] = {}
         for project in projects:
+            if not project.get("visible", True):
+                continue
             project_id = project["id"]
+            project_name = project.get("name") or f"Project {project_id}"
+            project_activities = [
+                {"id": activity["id"], "name": activity.get("name") or f"Activity {activity['id']}"}
+                for activity in activities_by_project.get(project_id, []) + global_activities
+            ]
+
+            all_projects.append(
+                {
+                    "id": project_id,
+                    "name": project_name,
+                    "activities": project_activities,
+                }
+            )
+
             total_month = month_seconds.get(project_id, 0)
-            if not project.get("visible", True) or total_month <= 0:
+            if total_month <= 0:
                 continue
 
-            project_activities = activities_by_project.get(project_id, []) + global_activities
             data[project_id] = KimaiProjectData(
                 id=project_id,
-                name=project.get("name") or f"Project {project_id}",
+                name=project_name,
                 customer_id=project.get("customer"),
                 customer_name=project.get("customerName") or project.get("parentTitle"),
                 week_seconds=week_seconds.get(project_id, 0),
                 month_seconds=total_month,
                 active=project_id in active_project_ids,
-                activities=[
-                    {"id": activity["id"], "name": activity.get("name") or f"Activity {activity['id']}"}
-                    for activity in project_activities
-                ],
+                activities=project_activities,
                 time_budget_seconds=project.get("timeBudget") or 0,
             )
+
+        self.all_projects = all_projects
         return data

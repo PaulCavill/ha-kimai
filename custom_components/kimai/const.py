@@ -10,6 +10,7 @@ DEFAULT_SCAN_INTERVAL = timedelta(minutes=30)
 
 SERVICE_ADD_TIMESHEET = "add_timesheet"
 
+ATTR_PROJECT_ID = "project_id"
 ATTR_ACTIVITY_ID = "activity_id"
 ATTR_DATE = "date"
 ATTR_START_TIME = "start_time"

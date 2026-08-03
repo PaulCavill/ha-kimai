@@ -8,7 +8,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
-from homeassistant.const import UnitOfTime
+from homeassistant.const import EntityCategory, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -37,8 +37,47 @@ async def async_setup_entry(
             KimaiProjectSensor(coordinator, entry, project_id) for project_id in new_ids
         )
 
+    async_add_entities([KimaiProjectListSensor(coordinator, entry)])
     _async_add_new_entities()
     entry.async_on_unload(coordinator.async_add_listener(_async_add_new_entities))
+
+
+def _device_info(entry: Any) -> DeviceInfo:
+    return DeviceInfo(
+        identifiers={(DOMAIN, entry.entry_id)},
+        name="Kimai",
+        manufacturer="Kimai",
+        model="Kimai time tracking",
+        configuration_url=entry.data.get(CONF_BASE_URL),
+    )
+
+
+class KimaiProjectListSensor(CoordinatorEntity[KimaiDataUpdateCoordinator], SensorEntity):
+    """Always-present sensor listing every active Kimai project, regardless of tracked time.
+
+    The per-project sensors below only exist for projects with time logged in
+    the current week/month, so they can't be used to populate an "add time"
+    project picker right after a month rolls over (every project's time
+    resets to zero at once). This entity is the stable data source for that.
+    """
+
+    _attr_has_entity_name = True
+    _attr_name = "Projects"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:format-list-bulleted"
+
+    def __init__(self, coordinator: KimaiDataUpdateCoordinator, entry: Any) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_project_list"
+        self._attr_device_info = _device_info(entry)
+
+    @property
+    def native_value(self) -> int:
+        return len(self.coordinator.all_projects)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {"projects": self.coordinator.all_projects}
 
 
 class KimaiProjectSensor(CoordinatorEntity[KimaiDataUpdateCoordinator], SensorEntity):
@@ -59,13 +98,7 @@ class KimaiProjectSensor(CoordinatorEntity[KimaiDataUpdateCoordinator], SensorEn
         super().__init__(coordinator)
         self._project_id = project_id
         self._attr_unique_id = f"{entry.entry_id}_project_{project_id}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name="Kimai",
-            manufacturer="Kimai",
-            model="Kimai time tracking",
-            configuration_url=entry.data.get(CONF_BASE_URL),
-        )
+        self._attr_device_info = _device_info(entry)
 
     @property
     def _project(self) -> KimaiProjectData | None:

@@ -18,6 +18,7 @@ from .const import (
     ATTR_DESCRIPTION,
     ATTR_DURATION_MINUTES,
     ATTR_END_TIME,
+    ATTR_PROJECT_ID,
     ATTR_START_TIME,
     DOMAIN,
     SERVICE_ADD_TIMESHEET,
@@ -27,6 +28,7 @@ from .coordinator import DATETIME_FORMAT
 ADD_TIMESHEET_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_ENTITY_ID): cv.entity_id,
+        vol.Required(ATTR_PROJECT_ID): vol.Coerce(int),
         vol.Required(ATTR_ACTIVITY_ID): vol.Coerce(int),
         vol.Required(ATTR_DATE): cv.date,
         vol.Required(ATTR_START_TIME): cv.time,
@@ -49,16 +51,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
         entity_registry = er.async_get(hass)
         entity_entry = entity_registry.async_get(entity_id)
         if entity_entry is None or entity_entry.config_entry_id is None:
-            raise HomeAssistantError(f"'{entity_id}' is not a known Kimai project entity")
+            raise HomeAssistantError(f"'{entity_id}' is not a known Kimai entity")
 
         config_entry = hass.config_entries.async_get_entry(entity_entry.config_entry_id)
         if config_entry is None or config_entry.domain != DOMAIN:
-            raise HomeAssistantError(f"'{entity_id}' is not a known Kimai project entity")
+            raise HomeAssistantError(f"'{entity_id}' is not a known Kimai entity")
 
-        prefix = f"{config_entry.entry_id}_project_"
-        if entity_entry.unique_id is None or not entity_entry.unique_id.startswith(prefix):
-            raise HomeAssistantError(f"'{entity_id}' is not a known Kimai project entity")
-        project_id = int(entity_entry.unique_id[len(prefix) :])
+        project_id = call.data[ATTR_PROJECT_ID]
 
         duration_minutes = call.data.get(ATTR_DURATION_MINUTES)
         end_time = call.data.get(ATTR_END_TIME)

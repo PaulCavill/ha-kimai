@@ -24,9 +24,13 @@
       "name": "Add timesheet entry",
       "description": "Log a completed time entry to Kimai for a project.",
       "fields": {
+        "project_id": {
+          "name": "Project",
+          "description": "Kimai project ID. See the 'Kimai Projects' entity's 'projects' attribute for valid id/name pairs."
+        },
         "activity_id": {
           "name": "Activity",
-          "description": "Kimai activity ID. See the project entity's 'activities' attribute for valid id/name pairs."
+          "description": "Kimai activity ID. See the chosen project's 'activities' entry for valid id/name pairs."
         },
         "date": {
           "name": "Date",
