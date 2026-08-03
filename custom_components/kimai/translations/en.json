@@ -1,0 +1,62 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Kimai",
+        "description": "Enter the base URL of your Kimai instance and an API token generated from your Kimai user profile.",
+        "data": {
+          "base_url": "Base URL",
+          "api_token": "API Token"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not connect to the Kimai instance. Check the base URL.",
+      "invalid_auth": "Invalid API token.",
+      "unknown": "Unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This Kimai instance is already configured."
+    }
+  },
+  "services": {
+    "add_timesheet": {
+      "name": "Add timesheet entry",
+      "description": "Log a completed time entry to Kimai for a project.",
+      "fields": {
+        "project_id": {
+          "name": "Project",
+          "description": "Kimai project ID. See the 'Kimai Projects' entity's 'projects' attribute for valid id/name pairs."
+        },
+        "activity_id": {
+          "name": "Activity",
+          "description": "Kimai activity ID. See the chosen project's 'activities' entry for valid id/name pairs."
+        },
+        "date": {
+          "name": "Date",
+          "description": "Date the work was done."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "Time work started."
+        },
+        "duration_minutes": {
+          "name": "Duration (minutes)",
+          "description": "Duration in minutes. Provide this or end time, not both."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "Time work ended. Provide this or duration, not both."
+        },
+        "description": {
+          "name": "Description",
+          "description": "Optional description for the timesheet entry."
+        },
+        "billable": {
+          "name": "Billable",
+          "description": "Whether this time entry is billable. Defaults to on."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "domain": "kimai",
+  "name": "Kimai",
+  "codeowners": ["@PaulCavill"],
+  "config_flow": true,
+  "documentation": "https://github.com/PaulCavill/ha-kimai",
+  "issue_tracker": "https://github.com/PaulCavill/ha-kimai/issues",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "requirements": [],
+  "version": "0.1.0"
+}
