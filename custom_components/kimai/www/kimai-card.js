@@ -7,7 +7,7 @@
  * writes new time entries via the `kimai.add_timesheet` service call (same
  * connection). There is no separate backend for this card to talk to.
  */
-const CARD_VERSION = "0.1.7";
+const CARD_VERSION = "0.1.8";
 console.info(`Kimai Card version ${CARD_VERSION}`);
 
 class KimaiCard extends HTMLElement {
@@ -87,6 +87,18 @@ class KimaiCard extends HTMLElement {
     const entityId = this._projectListEntityId();
     const state = entityId && this._hass.states[entityId];
     return (state && state.attributes && state.attributes.projects) || [];
+  }
+
+  _groupProjectsByCustomer(projects) {
+    const groups = new Map();
+    for (const project of projects) {
+      const customerName = project.customer_name || "Other";
+      if (!groups.has(customerName)) {
+        groups.set(customerName, []);
+      }
+      groups.get(customerName).push(project);
+    }
+    return [...groups.entries()];
   }
 
   _openDialog() {
@@ -190,7 +202,10 @@ class KimaiCard extends HTMLElement {
     return `
       <div class="row">
         <div class="row-header">
-          <span class="name">${name}</span>
+          <div>
+            <span class="name">${name}</span>
+            ${attrs.customer_name ? `<div class="customer">${attrs.customer_name}</div>` : ""}
+          </div>
           ${attrs.active ? '<span class="badge">&#9679; running</span>' : ""}
         </div>
         <div class="totals">
@@ -214,10 +229,18 @@ class KimaiCard extends HTMLElement {
           <div class="dialog-grid">
             <label>Project
               <select id="f-project">
-                ${projects
+                ${this._groupProjectsByCustomer(projects)
                   .map(
-                    (project) =>
-                      `<option value="${project.id}" ${String(project.id) === form.projectId ? "selected" : ""}>${project.name}</option>`
+                    ([customerName, group]) => `
+                      <optgroup label="${customerName}">
+                        ${group
+                          .map(
+                            (project) =>
+                              `<option value="${project.id}" ${String(project.id) === form.projectId ? "selected" : ""}>${project.name}</option>`
+                          )
+                          .join("")}
+                      </optgroup>
+                    `
                   )
                   .join("")}
               </select>
@@ -279,8 +302,9 @@ class KimaiCard extends HTMLElement {
         .card-content { padding: 0 16px 16px; }
         .rows-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
         .row { padding: 8px 0; border-bottom: 1px solid var(--divider-color, #eee); }
-        .row-header { display: flex; justify-content: space-between; align-items: center; }
+        .row-header { display: flex; justify-content: space-between; align-items: flex-start; }
         .name { font-weight: 500; }
+        .customer { font-size: 0.8em; color: var(--secondary-text-color); }
         .badge { font-size: 0.8em; color: var(--success-color, green); }
         .totals { display: flex; gap: 16px; font-size: 0.9em; color: var(--secondary-text-color); margin-top: 2px; }
         .bar { height: 4px; background: var(--divider-color, #eee); border-radius: 2px; margin-top: 6px; overflow: hidden; }

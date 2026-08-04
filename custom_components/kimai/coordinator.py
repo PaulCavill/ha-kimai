@@ -100,6 +100,8 @@ class KimaiDataUpdateCoordinator(DataUpdateCoordinator[dict[int, KimaiProjectDat
                 continue
             project_id = project["id"]
             project_name = project.get("name") or f"Project {project_id}"
+            customer_id = project.get("customer")
+            customer_name = project.get("customerName") or project.get("parentTitle")
             project_activities = [
                 {"id": activity["id"], "name": activity.get("name") or f"Activity {activity['id']}"}
                 for activity in activities_by_project.get(project_id, []) + global_activities
@@ -109,6 +111,8 @@ class KimaiDataUpdateCoordinator(DataUpdateCoordinator[dict[int, KimaiProjectDat
                 {
                     "id": project_id,
                     "name": project_name,
+                    "customer_id": customer_id,
+                    "customer_name": customer_name,
                     "activities": project_activities,
                 }
             )
@@ -120,8 +124,8 @@ class KimaiDataUpdateCoordinator(DataUpdateCoordinator[dict[int, KimaiProjectDat
             data[project_id] = KimaiProjectData(
                 id=project_id,
                 name=project_name,
-                customer_id=project.get("customer"),
-                customer_name=project.get("customerName") or project.get("parentTitle"),
+                customer_id=customer_id,
+                customer_name=customer_name,
                 week_seconds=week_seconds.get(project_id, 0),
                 month_seconds=total_month,
                 active=project_id in active_project_ids,
