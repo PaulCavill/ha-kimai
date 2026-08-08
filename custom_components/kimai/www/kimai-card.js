@@ -7,7 +7,7 @@
  * writes new time entries via the `kimai.add_timesheet` service call (same
  * connection). There is no separate backend for this card to talk to.
  */
-const CARD_VERSION = "0.1.8";
+const CARD_VERSION = "0.2.0";
 console.info(`Kimai Card version ${CARD_VERSION}`);
 
 class KimaiCard extends HTMLElement {
@@ -19,6 +19,7 @@ class KimaiCard extends HTMLElement {
     this._showDialog = false;
     this._error = null;
     this._form = null;
+    this._syncing = false;
     this._render();
   }
 
@@ -43,7 +44,7 @@ class KimaiCard extends HTMLElement {
   }
 
   static getStubConfig() {
-    return { title: "Kimai" };
+    return { title: "Kimai", title_size: "1.5em" };
   }
 
   _labelFor(entityId) {
@@ -99,6 +100,22 @@ class KimaiCard extends HTMLElement {
       groups.get(customerName).push(project);
     }
     return [...groups.entries()];
+  }
+
+  async _syncNow() {
+    const entityId = this._projectListEntityId();
+    if (!entityId || this._syncing) {
+      return;
+    }
+    this._syncing = true;
+    this._render();
+    try {
+      await this._hass.callService("homeassistant", "update_entity", { entity_id: entityId });
+    } catch (err) {
+      // Best-effort convenience action; not worth surfacing a dedicated error UI for.
+    }
+    this._syncing = false;
+    this._render();
   }
 
   _openDialog() {
@@ -291,14 +308,22 @@ class KimaiCard extends HTMLElement {
     const entityIds = this._entityIds();
     const rows = entityIds.map((id) => this._renderRow(id)).join("");
     const title = this._config.title || "Kimai";
+    const titleSize = this._config.title_size || "1.5em";
     const hasProjects = this._allProjects().length > 0;
+    const canSync = !!this._projectListEntityId() && !this._syncing;
 
     this.shadowRoot.innerHTML = `
       <style>
         ha-card { padding: 8px 0; }
         .card-header { display: flex; align-items: baseline; gap: 8px; padding: 8px 16px 0; }
-        .card-header h1 { font-size: 1.5em; margin: 0; font-weight: 400; }
+        .card-header h1 { margin: 0; font-weight: 400; }
         .card-version { font-size: 0.65em; color: var(--secondary-text-color); }
+        .sync-btn {
+          font-size: 0.65em; color: var(--secondary-text-color); background: none;
+          border: 1px solid var(--divider-color, #ccc); border-radius: 4px;
+          padding: 2px 6px; cursor: pointer; margin-left: auto;
+        }
+        .sync-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .card-content { padding: 0 16px 16px; }
         .rows-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
         .row { padding: 8px 0; border-bottom: 1px solid var(--divider-color, #eee); }
@@ -346,8 +371,9 @@ class KimaiCard extends HTMLElement {
       </style>
       <ha-card>
         <div class="card-header">
-          <h1>${title}</h1>
+          <h1 style="font-size: ${titleSize};">${title}</h1>
           <span class="card-version">v${CARD_VERSION}</span>
+          <button class="sync-btn" id="sync-btn" title="Sync now" ${canSync ? "" : "disabled"}>${this._syncing ? "&#8635; Syncing…" : "&#8635; Sync"}</button>
         </div>
         <div class="card-content">
           ${rows ? `<div class="rows-grid">${rows}</div>` : '<div class="empty">No Kimai project activity this week or month yet.</div>'}
@@ -360,6 +386,11 @@ class KimaiCard extends HTMLElement {
     const addBtn = this.shadowRoot.getElementById("add-btn");
     if (addBtn && hasProjects) {
       addBtn.addEventListener("click", () => this._openDialog());
+    }
+
+    const syncBtn = this.shadowRoot.getElementById("sync-btn");
+    if (syncBtn && canSync) {
+      syncBtn.addEventListener("click", () => this._syncNow());
     }
 
     if (this._showDialog) {

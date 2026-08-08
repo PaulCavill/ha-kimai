@@ -66,7 +66,12 @@ by editing the card in YAML mode and adding a `title` field, e.g.:
 ```yaml
 type: custom:kimai-card
 title: My Time Tracker
+title_size: 1.1em
 ```
+
+`title_size` accepts any CSS font-size value (e.g. `1.1em`, `20px`) and
+defaults to `1.5em` if omitted — useful for shrinking a longer custom title
+so it doesn't wrap.
 
 ## Known limitations
 
