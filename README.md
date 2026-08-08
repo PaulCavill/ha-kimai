@@ -6,21 +6,40 @@ totals per project and log new time entries without leaving Home Assistant.
 
 ## What you get
 
-- One sensor entity per active Kimai project that has at least one timesheet
-  entry in the current week or current month. State is total hours logged
-  this month; attributes include hours for the current week, hours for the
-  current month, whether a timer is currently running for that project, and
-  the project's activities (needed to log new time).
-- A `kimai.add_timesheet` service to log a completed time entry (project,
-  activity, date, start time, duration or end time, description) directly
-  against Kimai's REST API.
-- A `kimai-card` Lovelace card that lists your Kimai project entities and
-  provides an "+ Add time" form that calls the service above. The card reads
+All entities belong to a single "Kimai" device per configured instance.
+
+- **One sensor per project with time logged this month.** State is total hours
+  logged in the current calendar month (rounded to 1 decimal). Attributes:
+  `week_hours` / `week_seconds`, `month_hours` / `month_seconds`, `active`
+  (a timer is currently running for that project), `project_id`,
+  `project_name`, `customer_id`, `customer_name`, `activities` (needed to log
+  new time), and `time_budget_hours`.
+- **A "Projects" sensor** (diagnostic) whose state is the number of visible
+  Kimai projects and whose `projects` attribute lists every one of them with
+  its activities — regardless of tracked time. This is the stable data source
+  for the card's add-time picker, which would otherwise go empty right after a
+  month rolls over.
+- **A "Week Total" sensor** with total hours logged across all projects in the
+  current week (Monday-based).
+- **A `kimai.add_timesheet` service** to log a completed time entry (project,
+  activity, date, start time, duration *or* end time, description, billable
+  flag) directly against Kimai's REST API. It takes any entity from this
+  integration as its target — the entity only identifies which Kimai instance
+  to write to; the project comes from `project_id`.
+- **A `kimai-card` Lovelace card** that lists your Kimai project entities in a
+  two-column grid (with customer name, a running-timer badge, and a progress
+  bar when the project has a time budget), a "Sync" button to refresh data on
+  demand, and an "+ Add time" form that calls the service above. The card reads
   entity state over Home Assistant's existing frontend websocket connection —
   no separate backend/websocket server is required.
 
+Kimai is polled every **30 minutes**. Use the card's Sync button, or
+`homeassistant.update_entity`, to refresh sooner. Adding a time entry through
+the service refreshes automatically.
+
 ## Requirements
 
+- Home Assistant **2024.7.0** or newer.
 - A self-hosted (or cloud) **Kimai 2.x** instance reachable from Home
   Assistant.
 - An **API token** generated from your Kimai user profile (Settings → API
@@ -60,18 +79,45 @@ Settings → Dashboards → ⋮ → Resources → Add Resource:
 - Resource type: JavaScript Module
 
 Then add a card of type `Custom: Kimai Card` (`custom:kimai-card`) to any
-dashboard view. The card's title defaults to "Kimai" but can be customized
-by editing the card in YAML mode and adding a `title` field, e.g.:
+dashboard view. All options are optional and set by editing the card in YAML
+mode:
 
 ```yaml
 type: custom:kimai-card
 title: My Time Tracker
 title_size: 1.1em
+entities:
+  - sensor.kimai_some_project
+  - sensor.kimai_another_project
 ```
 
-`title_size` accepts any CSS font-size value (e.g. `1.1em`, `20px`) and
-defaults to `1.5em` if omitted — useful for shrinking a longer custom title
-so it doesn't wrap.
+| Option | Default | Description |
+| --- | --- | --- |
+| `title` | `Kimai` | Card heading. |
+| `title_size` | `1.5em` | Any CSS font-size value — useful for shrinking a longer custom title so it doesn't wrap. |
+| `entities` | auto-detected | Explicit list of project rows to show. Omit it and the card lists every Kimai project sensor it finds, sorted by entity id. |
+
+## Using the service
+
+```yaml
+action: kimai.add_timesheet
+target:
+  entity_id: sensor.kimai_projects
+data:
+  project_id: 12
+  activity_id: 3
+  date: "2026-08-08"
+  start_time: "09:00:00"
+  duration_minutes: 90
+  description: Fixed the thing
+  billable: true
+```
+
+Provide exactly one of `duration_minutes` or `end_time` — supplying both, or
+neither, is rejected. An `end_time` earlier than `start_time` is treated as
+crossing midnight. `billable` defaults to `true`. Project and activity ids come
+from the `projects` attribute of the "Projects" sensor (or a project sensor's
+`activities` attribute).
 
 ## Known limitations
 
@@ -80,8 +126,3 @@ so it doesn't wrap.
   timezone. If they differ, logged times may be off by the difference.
 - Automatic Lovelace resource registration uses an internal Home Assistant
   API and is best-effort; use the manual steps above if it doesn't appear.
-- Project entities, once created, are not removed if that project's tracked
-  time later drops back to zero (e.g. at the start of a new month before any
-  time has been logged again).
-- Kimai requires selecting an **activity** in addition to a project for every
-  timesheet entry, so the add-time form always includes an activity dropdown.
