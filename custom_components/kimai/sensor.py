@@ -37,7 +37,7 @@ async def async_setup_entry(
             KimaiProjectSensor(coordinator, entry, project_id) for project_id in new_ids
         )
 
-    async_add_entities([KimaiProjectListSensor(coordinator, entry)])
+    async_add_entities([KimaiProjectListSensor(coordinator, entry), KimaiWeekTotalSensor(coordinator, entry)])
     _async_add_new_entities()
     entry.async_on_unload(coordinator.async_add_listener(_async_add_new_entities))
 
@@ -78,6 +78,26 @@ class KimaiProjectListSensor(CoordinatorEntity[KimaiDataUpdateCoordinator], Sens
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         return {"projects": self.coordinator.all_projects}
+
+
+class KimaiWeekTotalSensor(CoordinatorEntity[KimaiDataUpdateCoordinator], SensorEntity):
+    """Always-present sensor reporting total hours logged across all projects this week."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Week Total"
+    _attr_native_unit_of_measurement = UnitOfTime.HOURS
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:calendar-week"
+
+    def __init__(self, coordinator: KimaiDataUpdateCoordinator, entry: Any) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_week_total"
+        self._attr_device_info = _device_info(entry)
+
+    @property
+    def native_value(self) -> float:
+        return round(self.coordinator.total_week_seconds / 3600, 1)
 
 
 class KimaiProjectSensor(CoordinatorEntity[KimaiDataUpdateCoordinator], SensorEntity):

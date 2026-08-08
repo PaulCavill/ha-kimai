@@ -47,6 +47,7 @@ class KimaiDataUpdateCoordinator(DataUpdateCoordinator[dict[int, KimaiProjectDat
         )
         self.client = client
         self.all_projects: list[dict[str, Any]] = []
+        self.total_week_seconds: float = 0.0
 
     async def _async_update_data(self) -> dict[int, KimaiProjectData]:
         now = dt_util.now()
@@ -134,4 +135,5 @@ class KimaiDataUpdateCoordinator(DataUpdateCoordinator[dict[int, KimaiProjectDat
             )
 
         self.all_projects = all_projects
+        self.total_week_seconds = sum(week_seconds.values())
         return data
